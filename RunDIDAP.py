@@ -44,7 +44,7 @@ def RunDDF(MSName,
     os_exec(ss)
 
 def RunKMS(MSName,BaseImageName,OutSolsName,SOLSDIR="SOLSDIR",NodesFile=None,DicoModel=None):
-    ss="kMS.py --MSName %s --SolverType KAFCA --PolMode Scalar --BaseImageName %s --dt 5 --NCPU 40 --OutSolsName %s --InCol DATA --UVMinMax=0.5,1000. --SolsDir=%s --NChanSols 10 --BeamMode None --DDFCacheDir=. --MaxFacetSize 0.5 --MinFacetSize 0.05 --TChunk 2.1"%(MSName,BaseImageName,SOLSDIR,BaseImageName,BaseImageName)
+    ss="kMS.py --MSName %s --SolverType KAFCA --PolMode Scalar --BaseImageName %s --dt 5 --NCPU 40 --InCol DATA --UVMinMax=0.5,1000. --SolsDir=%s --NChanSols 10 --BeamMode None --DDFCacheDir=. --MaxFacetSize 0.5 --MinFacetSize 0.05 --TChunk 2.1"%(MSName,BaseImageName,SOLSDIR)
 
     if DicoModel is not None:
         ss+=" --DicoModel %s"%DicoModel
@@ -53,7 +53,7 @@ def RunKMS(MSName,BaseImageName,OutSolsName,SOLSDIR="SOLSDIR",NodesFile=None,Dic
         ss+=" --NodesFile %s"%NodesFile
 
     if OutSolsName is not None:
-        ss=+" --OutSolsName %s"%OutSolsName
+        ss+=" --OutSolsName %s"%OutSolsName
         
     FilsSolsName="%s/killMS.%s.sols.npz"%(SOLSDIR,OutSolsName)
     if os.path.isfile(FilsSolsName):
@@ -90,18 +90,20 @@ def run(MSName):
     
     # ################################
     # Cluster skymodel
-    ss="MakeCatalog.py --RestoredIm %s.app.restored.fits"%BaseImageName
-    os_exec(ss)
-    ss="ClusterCat.py --SourceCat %s.app.restored.pybdsm.srl.fits --DoPlot=1 --NGen 100 --NCPU 40 --FluxMin 0.001 --NCluster 6 --CentralRadius 0.5"%BaseImageName
-    os_exec(ss)
+    
     NodesFile="%s.app.restored.pybdsm.srl.fits.ClusterCat.npy"%BaseImageName
+    if not os.path.isfile(NodesFile):
+        ss="MakeCatalog.py --RestoredIm %s.app.restored.fits"%BaseImageName
+        os_exec(ss)
+        ss="ClusterCat.py --SourceCat %s.app.restored.pybdsm.srl.fits --DoPlot=1 --NGen 100 --NCPU 40 --FluxMin 0.001 --NCluster 6 --CentralRadius 0.5"%BaseImageName
+        os_exec(ss)
 
     # ################################
     # DD calibration
     DicoModel="%s.DicoModel"%BaseImageName
     SOLSDIR="SOLS_%s"%MSName
     SolsFile="DDS0"
-    RunKMS(MSName,BaseImageName,OutSolsName,SOLSDIR=SOLSDIR,NodesFile=NodesFile,DicoModel=DicoModel)
+    RunKMS(MSName,BaseImageName,SolsFile,SOLSDIR=SOLSDIR,NodesFile=NodesFile,DicoModel=DicoModel)
     os_exec(ss)
     
     # ################################
