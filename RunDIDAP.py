@@ -10,7 +10,14 @@ def os_exec(ss):
     print>>log,ModColor.Str("==========================================================")
     os.system(ss)
 
-def RunDDF(MSName,OutBaseImageName,MaskName=None,SolsFile=None,SOLSDIR="SOLSDIR",InitDicoModel=None,NMajorIter=5,WeightColName=None):
+def RunDDF(MSName,
+           OutBaseImageName,
+           MaskName=None,
+           SolsFile=None,SOLSDIR="SOLSDIR",
+           InitDicoModel=None,NMajorIter=5,
+           WeightColName=None,
+           FromLastResid=False):
+        
     ss="DDF.py --Data-MS %s --Image-Cell 2. --Image-NPix 12000 --Output-Mode Clean --Data-ColName DATA --Freq-NBand 2 --Freq-NDegridBand 10 --Facets-NFacet 7 --Weight-ColName None --Cache-Reset 0 --Deconv-Mode SSD --Mask-Auto 1 --Output-RestoringBeam 11. --Weight-Robust -1.0 --Output-Name %s --Deconv-CycleFactor 0. --Deconv-PeakFactor 0.003 --Facets-DiamMax 0.5 --Facets-DiamMin 0.05 --Deconv-MaxMajorIter %i"%(MSName,OutBaseImageName,NMajorIter)
 
     if MaskName is not None:
@@ -24,7 +31,10 @@ def RunDDF(MSName,OutBaseImageName,MaskName=None,SolsFile=None,SOLSDIR="SOLSDIR"
 
     if WeightColName is not None:
          ss+=" --Weight-ColName %s"%WeightColName
-       
+
+
+    if FromLastResid:
+        ss+=" --Cache-PSF force --Cache-Dirty forceresidual"
     OutName="%s.app.restored.fits"%OutBaseImageName
     if os.path.isfile(OutName):
         print>>log,ModColor.Str("%s exists, skippinf DDF step:"%OutName)
@@ -55,7 +65,7 @@ def run(MSName):
 
     # ################################
     # Initial imaging
-    RunDDF(MSName,BaseImageName,NMajorIter=5)
+    RunDDF(MSName,BaseImageName,NMajorIter=2)
 
     # ################################
     # Make Mask
@@ -66,11 +76,17 @@ def run(MSName):
 
     # ################################
     # Deconvolve deeper
-    RunDDF(MSName,BaseImageName,MaskName=MaskName,NMajorIter=2)
+    DicoModel="%s.DicoModel"%BaseImageName
+    BaseImageName="%s_m"%BaseImageName
+    RunDDF(MSName,
+           BaseImageName,
+           MaskName=MaskName,
+           NMajorIter=1,
+           FromLastResid=True,
+           InitDicoModel=DicoModel)
     
     # ################################
     # Cluster skymodel
-    BaseImageName="%s_m"%BaseImageName
     ss="MakeCatalog.py --RestoredIm %s.app.restored.fits"%BaseImageName
     os_exec(ss)
     ss="ClusterCat.py --SourceCat %s.app.restored.pybdsm.srl.fits --DoPlot=1 --NGen 100 --NCPU 40 --FluxMin 0.001 --NCluster 6 --CentralRadius 0.5"%BaseImageName
@@ -88,7 +104,13 @@ def run(MSName):
     # ################################
     # DD imaging
     BaseImageName+=".AP"
-    RunDDF(MSName,BaseImageName,MaskName=MaskName,SolsFile=SolsFile,SOLSDIR=SOLSDIR,InitDicoModel=DicoModel,NMajorIter=2,WeightColName="IMAGING_WEIGHT")
+    RunDDF(MSName,
+           BaseImageName,
+           MaskName=MaskName,
+           SolsFile=SolsFile,SOLSDIR=SOLSDIR,
+           InitDicoModel=DicoModel,
+           NMajorIter=2,
+           WeightColName="IMAGING_WEIGHT")
 
 def run_all():
     ll=[l.strip() for l in file("mslist.txt","r").readlines()]
