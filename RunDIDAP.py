@@ -48,16 +48,19 @@ def RunKMS(MSName,BaseImageName,OutSolsName,SOLSDIR="SOLSDIR",NodesFile=None,Dic
 
     if DicoModel is not None:
         ss+=" --DicoModel %s"%DicoModel
+        
     if NodesFile is not None:
         ss+=" --NodesFile %s"%NodesFile
+
     if OutSolsName is not None:
         ss=+" --OutSolsName %s"%OutSolsName
-
+        
     FilsSolsName="%s/killMS.%s.sols.npz"%(SOLSDIR,OutSolsName)
     if os.path.isfile(FilsSolsName):
         print>>log,ModColor.Str("%s exists, skippinf kMS step:"%FilsSolsName)
         print>>log,ModColor.Str("    %s"%ss)
         return
+    
     os_exec(ss)
  
 def run(MSName):
