@@ -55,7 +55,7 @@ def RunKMS(MSName,BaseImageName,OutSolsName,SOLSDIR="SOLSDIR",NodesFile=None,Dic
     if OutSolsName is not None:
         ss+=" --OutSolsName %s"%OutSolsName
         
-    FilsSolsName="%s/killMS.%s.sols.npz"%(SOLSDIR,OutSolsName)
+    FilsSolsName="%s/%s/killMS.%s.sols.npz"%(SOLSDIR,MSName,OutSolsName)
     if os.path.isfile(FilsSolsName):
         print>>log,ModColor.Str("%s exists, skippinf kMS step:"%FilsSolsName)
         print>>log,ModColor.Str("    %s"%ss)
