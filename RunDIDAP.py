@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import os
 from DDFacet.Other import logger
 log=logger.getLogger("DDPipeASKAP")
