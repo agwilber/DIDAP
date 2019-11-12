@@ -16,9 +16,9 @@ def RunDDF(MSName,
            SolsFile=None,SOLSDIR="SOLSDIR",
            InitDicoModel=None,NMajorIter=5,
            WeightColName=None,
-           FromLastResid=False):
+           FromLastResid=False,PeakFactor=0.003):
         
-    ss="DDF.py --Data-MS %s --Image-Cell 2. --Image-NPix 12000 --Output-Mode Clean --Data-ColName DATA --Freq-NBand 2 --Freq-NDegridBand 10 --Facets-NFacet 7 --Weight-ColName None --Cache-Reset 0 --Deconv-Mode SSD --Mask-Auto 1 --Output-RestoringBeam 11. --Weight-Robust -1.0 --Output-Name %s --Deconv-CycleFactor 0. --Deconv-PeakFactor 0.003 --Facets-DiamMax 0.5 --Facets-DiamMin 0.05 --Deconv-MaxMajorIter %i"%(MSName,OutBaseImageName,NMajorIter)
+    ss="DDF.py --Data-MS %s --Image-Cell 2. --Image-NPix 12000 --Output-Mode Clean --Data-ColName DATA --Freq-NBand 2 --Freq-NDegridBand 10 --Facets-NFacet 7 --Weight-ColName None --Cache-Reset 0 --Deconv-Mode SSD --Mask-Auto 1 --Output-RestoringBeam 11. --Weight-Robust -1.0 --Output-Name %s --Deconv-CycleFactor 0. --Deconv-PeakFactor %s --Facets-DiamMax 0.5 --Facets-DiamMin 0.05 --Deconv-MaxMajorIter %i"%(MSName,OutBaseImageName,PeakFactor,NMajorIter)
 
     if MaskName is not None:
         ss+=" --Mask-External %s"%MaskName
@@ -112,8 +112,27 @@ def run(MSName):
            MaskName=MaskName,
            SolsFile=SolsFile,SOLSDIR=SOLSDIR,
            InitDicoModel=DicoModel,
-           NMajorIter=2,
+           NMajorIter=1,
            WeightColName="IMAGING_WEIGHT")
+    
+    # ################################
+    # Make Mask
+    ss="MakeMask.py --RestoredIm %s.app.restored.fits --Box 100,2 --Th 10"%(BaseImageName)
+    os_exec(ss)
+    MaskName="%s.app.restored.fits.mask.fits"%BaseImageName
+
+    # ################################
+    # DD imaging deeper
+    DicoModel="%s.DicoModel"%BaseImageName
+    BaseImageName="%s_m"%BaseImageName
+    RunDDF(MSName,
+           BaseImageName,
+           MaskName=MaskName,
+           NMajorIter=1,
+           FromLastResid=True,
+           InitDicoModel=DicoModel,
+           WeightColName="IMAGING_WEIGHT",
+           PeakFactor=0.)
 
 def run_all():
     ll=[l.strip() for l in file("mslist.txt","r").readlines()]
