@@ -19,11 +19,14 @@ def RunDDF(MSName,
            SolsFile=None,SOLSDIR="SOLSDIR",
            InitDicoModel=None,NMajorIter=5,
            WeightColName=None,
+           MaskAuto=True,
            FromLastResid=False,PeakFactor=0.003,Robust=-1.):
         
-    ss="DDF.py --Data-MS %s --Image-Cell 2. --Image-NPix 12000 --Output-Mode Clean --Data-ColName DATA --Freq-NBand 2 --Freq-NDegridBand 10 --Facets-NFacet 7 --Weight-ColName None --Cache-Reset 0 --Deconv-Mode SSD --Mask-Auto 1 --Output-RestoringBeam 11. --Output-Name %s --Deconv-CycleFactor 0. --Deconv-PeakFactor %s --Facets-DiamMin %f --Facets-DiamMax %f --Deconv-MaxMajorIter %i --Weight-Robust %f"%(MSName,OutBaseImageName,PeakFactor,MinFacetSize,MaxFacetSize,NMajorIter,Robust)
+    ss="DDF.py --Data-MS %s --Image-Cell 2. --Image-NPix 12000 --Output-Mode Clean --Data-ColName DATA --Freq-NBand 2 --Freq-NDegridBand 10 --Facets-NFacet 7 --Weight-ColName None --Cache-Reset 0 --Deconv-Mode SSD --Output-RestoringBeam 11. --Output-Name %s --Deconv-CycleFactor 0. --Deconv-PeakFactor %s --Facets-DiamMin %f --Facets-DiamMax %f --Deconv-MaxMajorIter %i --Weight-Robust %f"%(MSName,OutBaseImageName,PeakFactor,MinFacetSize,MaxFacetSize,NMajorIter,Robust)
 
-    
+    if MaskAuto:
+        ss+=" --Mask-Auto 1"
+        
     
     if MaskName is not None:
         ss+=" --Mask-External %s"%MaskName
@@ -68,13 +71,13 @@ def RunKMS(MSName,BaseImageName,OutSolsName,SOLSDIR="SOLSDIR",NodesFile=None,Dic
     
     os_exec(ss)
 
-def RunMakeMask(BaseImageName):
-    ss="MakeMask.py --RestoredIm %s.app.restored.fits --Box 50,2 --Th 7"%(BaseImageName)
+def RunMakeMask(BaseImageName,Th=10,Box=(100,2)):
+    ss="MakeMask.py --RestoredIm %s.app.restored.fits --Box %i,%i --Th %f"%(BaseImageName,Box[0],Box[1],Th)
     FileOutName="%s.app.restored.fits.mask.fits"%BaseImageName
     if os.path.isfile(FileOutName):
         print>>log,ModColor.Str("%s exists, skipping MakeMask step:"%FileOutName)
         print>>log,ModColor.Str("    %s"%ss)
-        return
+        return FileOutName
     os_exec(ss)
     return FileOutName
     
@@ -131,21 +134,23 @@ def run(MSName):
     
     # ################################
     # Make Mask
-    MaskName=RunMakeMask(BaseImageName)
+    MaskName=RunMakeMask(BaseImageName,Th=5,Box=(50,2))
 
     # ################################
     # DD imaging deeper
-
     BaseImageName="%s_m"%BaseImageName
     RunDDF(MSName,
            BaseImageName,
            MaskName=MaskName,
-           NMajorIter=1,
-           FromLastResid=True,
+           SolsFile=SolsFile,SOLSDIR=SOLSDIR,
            InitDicoModel=DicoModel,
-           WeightColName="IMAGING_WEIGHT",
+           NMajorIter=1,
            PeakFactor=0.,
+           FromLastResid=True,
+           MaskAuto=False,
+           WeightColName="IMAGING_WEIGHT",
            Robust=-1.5)
+    
 
 def run_all():
     ll=[l.strip() for l in file("mslist.txt","r").readlines()]
