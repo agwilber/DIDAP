@@ -4,6 +4,9 @@ from DDFacet.Other import logger
 log=logger.getLogger("DDPipeASKAP")
 from DDFacet.Other import ModColor
 
+MaxFacetSize=1.
+MinFacetSize=MaxFacetSize/10.
+
 def os_exec(ss):
     print>>log,ModColor.Str("==========================================================")
     print>>log,ModColor.Str("Executing %s"%ss)
@@ -16,10 +19,12 @@ def RunDDF(MSName,
            SolsFile=None,SOLSDIR="SOLSDIR",
            InitDicoModel=None,NMajorIter=5,
            WeightColName=None,
-           FromLastResid=False,PeakFactor=0.003):
+           FromLastResid=False,PeakFactor=0.003,Robust=-1.):
         
-    ss="DDF.py --Data-MS %s --Image-Cell 2. --Image-NPix 12000 --Output-Mode Clean --Data-ColName DATA --Freq-NBand 2 --Freq-NDegridBand 10 --Facets-NFacet 7 --Weight-ColName None --Cache-Reset 0 --Deconv-Mode SSD --Mask-Auto 1 --Output-RestoringBeam 11. --Weight-Robust -1.0 --Output-Name %s --Deconv-CycleFactor 0. --Deconv-PeakFactor %s --Facets-DiamMax 0.5 --Facets-DiamMin 0.05 --Deconv-MaxMajorIter %i"%(MSName,OutBaseImageName,PeakFactor,NMajorIter)
+    ss="DDF.py --Data-MS %s --Image-Cell 2. --Image-NPix 12000 --Output-Mode Clean --Data-ColName DATA --Freq-NBand 2 --Freq-NDegridBand 10 --Facets-NFacet 7 --Weight-ColName None --Cache-Reset 0 --Deconv-Mode SSD --Mask-Auto 1 --Output-RestoringBeam 11. --Output-Name %s --Deconv-CycleFactor 0. --Deconv-PeakFactor %s --Facets-DiamMin %f --Facets-DiamMax %f --Deconv-MaxMajorIter %i --Weight-Robust %f"%(MSName,OutBaseImageName,PeakFactor,MinFacetSize,MaxFacetSize,NMajorIter,Robust)
 
+    
+    
     if MaskName is not None:
         ss+=" --Mask-External %s"%MaskName
         
@@ -44,7 +49,7 @@ def RunDDF(MSName,
     os_exec(ss)
 
 def RunKMS(MSName,BaseImageName,OutSolsName,SOLSDIR="SOLSDIR",NodesFile=None,DicoModel=None):
-    ss="kMS.py --MSName %s --SolverType KAFCA --PolMode Scalar --BaseImageName %s --dt 5 --NCPU 40 --InCol DATA --UVMinMax=0.5,1000. --SolsDir=%s --NChanSols 10 --BeamMode None --DDFCacheDir=. --MaxFacetSize 0.5 --MinFacetSize 0.05 --TChunk 2.1"%(MSName,BaseImageName,SOLSDIR)
+    ss="kMS.py --MSName %s --SolverType KAFCA --PolMode Scalar --BaseImageName %s --dt 5 --NCPU 40 --InCol DATA --UVMinMax=0.5,1000. --SolsDir=%s --NChanSols 10 --BeamMode None --DDFCacheDir=. --MinFacetSize %f --MaxFacetSize %f  --TChunk 2.1"%(MSName,BaseImageName,SOLSDIR,MinFacetSize,MaxFacetSize)
 
     if DicoModel is not None:
         ss+=" --DicoModel %s"%DicoModel
@@ -62,20 +67,27 @@ def RunKMS(MSName,BaseImageName,OutSolsName,SOLSDIR="SOLSDIR",NodesFile=None,Dic
         return
     
     os_exec(ss)
- 
-def run(MSName):
-    BaseImageName=MSName.split("_")[2].split(".")[1]
 
+def RunMakeMask(BaseImageName):
+    ss="MakeMask.py --RestoredIm %s.app.restored.fits --Box 50,2 --Th 7"%(BaseImageName)
+    FileOutName="%s.app.restored.fits.mask.fits"%BaseImageName
+    if os.path.isfile(FileOutName):
+        print>>log,ModColor.Str("%s exists, skipping MakeMask step:"%FileOutName)
+        print>>log,ModColor.Str("    %s"%ss)
+        return
+    os_exec(ss)
+    return FileOutName
+    
+def run(MSName):
+
+    BaseImageName=os.path.abspath(MSName).split("_")[-3].split(".")[1]
     # ################################
     # Initial imaging
     RunDDF(MSName,BaseImageName,NMajorIter=2)
 
     # ################################
     # Make Mask
-    ss="MakeMask.py --RestoredIm %s.app.restored.fits --Box 100,2 --Th 10"%(BaseImageName)
-    os_exec(ss)
-
-    MaskName="%s.app.restored.fits.mask.fits"%BaseImageName
+    MaskName=RunMakeMask(BaseImageName)
 
     # ################################
     # Deconvolve deeper
@@ -95,7 +107,7 @@ def run(MSName):
     if not os.path.isfile(NodesFile):
         ss="MakeCatalog.py --RestoredIm %s.app.restored.fits"%BaseImageName
         os_exec(ss)
-        ss="ClusterCat.py --SourceCat %s.app.restored.pybdsm.srl.fits --DoPlot=1 --NGen 100 --NCPU 40 --FluxMin 0.001 --NCluster 6 --CentralRadius 0.5"%BaseImageName
+        ss="ClusterCat.py --SourceCat %s.app.restored.pybdsm.srl.fits --DoPlot=1 --NGen 100 --NCPU 40 --FluxMin 0.001 --NCluster 6 --CentralRadius 0.7"%BaseImageName
         os_exec(ss)
 
     # ################################
@@ -104,7 +116,6 @@ def run(MSName):
     SOLSDIR="SOLS_%s"%MSName
     SolsFile="DDS0"
     RunKMS(MSName,BaseImageName,SolsFile,SOLSDIR=SOLSDIR,NodesFile=NodesFile,DicoModel=DicoModel)
-    os_exec(ss)
     
     # ################################
     # DD imaging
@@ -114,18 +125,17 @@ def run(MSName):
            MaskName=MaskName,
            SolsFile=SolsFile,SOLSDIR=SOLSDIR,
            InitDicoModel=DicoModel,
-           NMajorIter=1,
-           WeightColName="IMAGING_WEIGHT")
+           NMajorIter=0,
+           WeightColName="IMAGING_WEIGHT",
+           Robust=-1.5)
     
     # ################################
     # Make Mask
-    ss="MakeMask.py --RestoredIm %s.app.restored.fits --Box 100,2 --Th 10"%(BaseImageName)
-    os_exec(ss)
-    MaskName="%s.app.restored.fits.mask.fits"%BaseImageName
+    MaskName=RunMakeMask(BaseImageName)
 
     # ################################
     # DD imaging deeper
-    DicoModel="%s.DicoModel"%BaseImageName
+
     BaseImageName="%s_m"%BaseImageName
     RunDDF(MSName,
            BaseImageName,
@@ -134,7 +144,8 @@ def run(MSName):
            FromLastResid=True,
            InitDicoModel=DicoModel,
            WeightColName="IMAGING_WEIGHT",
-           PeakFactor=0.)
+           PeakFactor=0.,
+           Robust=-1.5)
 
 def run_all():
     ll=[l.strip() for l in file("mslist.txt","r").readlines()]
