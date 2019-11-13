@@ -52,7 +52,7 @@ def RunDDF(MSName,
     os_exec(ss)
 
 def RunKMS(MSName,BaseImageName,OutSolsName,SOLSDIR="SOLSDIR",NodesFile=None,DicoModel=None):
-    ss="kMS.py --MSName %s --SolverType KAFCA --PolMode Scalar --BaseImageName %s --dt 5 --NCPU 40 --InCol DATA --UVMinMax=0.5,1000. --SolsDir=%s --NChanSols 10 --BeamMode None --DDFCacheDir=. --MinFacetSize %f --MaxFacetSize %f  --TChunk 2.1"%(MSName,BaseImageName,SOLSDIR,MinFacetSize,MaxFacetSize)
+    ss="kMS.py --MSName %s --SolverType KAFCA --PolMode Scalar --BaseImageName %s --dt 5 --NCPU 40 --InCol DATA --UVMinMax=0.5,1000. --SolsDir=%s --NChanSols 10 --BeamMode None --DDFCacheDir=. --MinFacetSize %f --MaxFacetSize %f  --TChunk 1.67"%(MSName,BaseImageName,SOLSDIR,MinFacetSize,MaxFacetSize)
 
     if DicoModel is not None:
         ss+=" --DicoModel %s"%DicoModel
@@ -84,6 +84,8 @@ def RunMakeMask(BaseImageName,Th=10,Box=(100,2)):
 def run(MSName):
 
     BaseImageName=os.path.abspath(MSName).split("_")[-3].split(".")[1]
+    if os.path.isfile("%s_m.AP_m.app.restored.fits"%BaseImageName):
+        return
     # ################################
     # Initial imaging
     RunDDF(MSName,BaseImageName,NMajorIter=2)
