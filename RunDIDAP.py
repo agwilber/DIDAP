@@ -83,6 +83,9 @@ def CleanFiles(MSName):
     if not os.path.isdir("PRODUCTS"):
         EX("mkdir -p %s"%PDir)
     KEEP=["%s_m.AP_m.app.restored.fits"%BaseImageName,
+          "%s_m.AP_m.tessel.reg"%BaseImageName,
+          "%s_m.AP_m.parset"%BaseImageName,
+          "%s_m.AP_m.log"%BaseImageName,
           "%s_m.AP_m.DicoModel"%BaseImageName,
           "%s_m.AP.app.restored.fits.mask.fits"%BaseImageName,
           "SOLS_%s"%MSName]
