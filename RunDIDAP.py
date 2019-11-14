@@ -6,11 +6,18 @@ from DDFacet.Other import ModColor
 
 MaxFacetSize=1.
 MinFacetSize=MaxFacetSize/10.
+PDir="PRODUCTS"
 
-def os_exec(ss):
-    print>>log,ModColor.Str("==========================================================")
+def os_exec(ss,CheckFile=None):
+    print
+    print>>log,ModColor.Str("====================================================================================================================",col="blue")
+
+    if CheckFile is not None:
+        if os.path.isfile(CheckFile):
+            print>>log,ModColor.Str("%s exists..."%CheckFile,col="green")
+            print>>log,ModColor.Str(" skipping step: ",col="green")+"    %s"%ss
+            return
     print>>log,ModColor.Str("Executing %s"%ss)
-    print>>log,ModColor.Str("==========================================================")
     os.system(ss)
 
 def RunDDF(MSName,
@@ -44,12 +51,8 @@ def RunDDF(MSName,
     if FromLastResid:
         ss+=" --Cache-PSF force --Cache-Dirty forceresidual"
     OutName="%s.app.restored.fits"%OutBaseImageName
-    if os.path.isfile(OutName):
-        print>>log,ModColor.Str("%s exists, skippinf DDF step:"%OutName)
-        print>>log,ModColor.Str("    %s"%ss)
-        return
         
-    os_exec(ss)
+    os_exec(ss,CheckFile=OutName)
 
 def RunKMS(MSName,BaseImageName,OutSolsName,SOLSDIR="SOLSDIR",NodesFile=None,DicoModel=None):
     ss="kMS.py --MSName %s --SolverType KAFCA --PolMode Scalar --BaseImageName %s --dt 5 --NCPU 40 --InCol DATA --UVMinMax=0.5,1000. --SolsDir=%s --NChanSols 10 --BeamMode None --DDFCacheDir=. --MinFacetSize %f --MaxFacetSize %f  --TChunk 1.67"%(MSName,BaseImageName,SOLSDIR,MinFacetSize,MaxFacetSize)
@@ -62,29 +65,41 @@ def RunKMS(MSName,BaseImageName,OutSolsName,SOLSDIR="SOLSDIR",NodesFile=None,Dic
 
     if OutSolsName is not None:
         ss+=" --OutSolsName %s"%OutSolsName
-        
     FilsSolsName="%s/%s/killMS.%s.sols.npz"%(SOLSDIR,MSName,OutSolsName)
-    if os.path.isfile(FilsSolsName):
-        print>>log,ModColor.Str("%s exists, skippinf kMS step:"%FilsSolsName)
-        print>>log,ModColor.Str("    %s"%ss)
-        return
-    
-    os_exec(ss)
+    os_exec(ss,CheckFile=FilsSolsName)
 
 def RunMakeMask(BaseImageName,Th=10,Box=(100,2)):
     ss="MakeMask.py --RestoredIm %s.app.restored.fits --Box %i,%i --Th %f"%(BaseImageName,Box[0],Box[1],Th)
     FileOutName="%s.app.restored.fits.mask.fits"%BaseImageName
-    if os.path.isfile(FileOutName):
-        print>>log,ModColor.Str("%s exists, skipping MakeMask step:"%FileOutName)
-        print>>log,ModColor.Str("    %s"%ss)
-        return FileOutName
-    os_exec(ss)
+    os_exec(ss,CheckFile=FileOutName)
     return FileOutName
-    
-def run(MSName):
 
+def CleanFiles(MSName):
+    def EX(ss):
+        #print ss
+        os.system(ss)
     BaseImageName=os.path.abspath(MSName).split("_")[-3].split(".")[1]
-    if os.path.isfile("%s_m.AP_m.app.restored.fits"%BaseImageName):
+    MSName=os.path.abspath(MSName).split("/")[-1]
+    if not os.path.isdir("PRODUCTS"):
+        EX("mkdir -p %s"%PDir)
+    KEEP=["%s_m.AP_m.app.restored.fits"%BaseImageName,
+          "%s_m.AP_m.DicoModel"%BaseImageName,
+          "%s_m.AP.app.restored.fits.mask.fits"%BaseImageName,
+          "SOLS_%s"%MSName]
+    print>>log,ModColor.Str("Moving %s to %s"%(str(KEEP),PDir))
+    for File in KEEP:
+        EX("mv %s %s"%(File,PDir))
+        
+    print>>log,ModColor.Str("Delete the rest...")
+    EX("rm -rf %s*"%BaseImageName)
+    EX("rm -rf %s*.ddfcache"%MSName)
+        
+def run(MSName):
+    
+    BaseImageName=os.path.abspath(MSName).split("_")[-3].split(".")[1]
+    # if os.path.isfile("%s_m.AP_m.app.restored.fits"%BaseImageName):
+    #     return
+    if os.path.isfile("%s/%s_m.AP_m.app.restored.fits"%(PDir,BaseImageName)):
         return
     # ################################
     # Initial imaging
@@ -152,7 +167,8 @@ def run(MSName):
            MaskAuto=False,
            WeightColName="IMAGING_WEIGHT",
            Robust=-1.5)
-    
+
+    CleanFiles(MSName)
 
 def run_all():
     ll=[l.strip() for l in file("mslist.txt","r").readlines()]
