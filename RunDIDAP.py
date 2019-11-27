@@ -3,6 +3,7 @@ import os
 from DDFacet.Other import logger
 log=logger.getLogger("DDPipeASKAP")
 from DDFacet.Other import ModColor
+import sys
 
 MaxFacetSize=1.
 MinFacetSize=MaxFacetSize/10.
@@ -55,7 +56,7 @@ def RunDDF(MSName,
     os_exec(ss,CheckFile=OutName)
 
 def RunKMS(MSName,BaseImageName,OutSolsName,SOLSDIR="SOLSDIR",NodesFile=None,DicoModel=None):
-    ss="kMS.py --MSName %s --SolverType KAFCA --PolMode Scalar --BaseImageName %s --dt 5 --NCPU 40 --InCol DATA --UVMinMax=0.5,1000. --SolsDir=%s --NChanSols 10 --BeamMode None --DDFCacheDir=. --MinFacetSize %f --MaxFacetSize %f  --TChunk 1.67"%(MSName,BaseImageName,SOLSDIR,MinFacetSize,MaxFacetSize)
+    ss="kMS.py --MSName %s --SolverType KAFCA --PolMode Scalar --BaseImageName %s --dt 5 --NCPU 40 --InCol DATA --UVMinMax=0.1,1000. --SolsDir=%s --NChanSols 10 --BeamMode None --DDFCacheDir=. --MinFacetSize %f --MaxFacetSize %f  --TChunk 1.67"%(MSName,BaseImageName,SOLSDIR,MinFacetSize,MaxFacetSize)
 
     if DicoModel is not None:
         ss+=" --DicoModel %s"%DicoModel
@@ -88,6 +89,7 @@ def CleanFiles(MSName):
           "%s_m.AP_m.log"%BaseImageName,
           "%s_m.AP_m.DicoModel"%BaseImageName,
           "%s_m.AP.app.restored.fits.mask.fits"%BaseImageName,
+          "%s_m.app.restored.pybdsm.srl.fits.ClusterCat.npy"%BaseImageName,
           "SOLS_%s"%MSName]
     print>>log,ModColor.Str("Moving %s to %s"%(str(KEEP),PDir))
     for File in KEEP:
@@ -130,7 +132,8 @@ def run(MSName):
     if not os.path.isfile(NodesFile):
         ss="MakeCatalog.py --RestoredIm %s.app.restored.fits"%BaseImageName
         os_exec(ss)
-        ss="ClusterCat.py --SourceCat %s.app.restored.pybdsm.srl.fits --DoPlot=1 --NGen 100 --NCPU 40 --FluxMin 0.001 --NCluster 6 --CentralRadius 0.7"%BaseImageName
+        #ss="ClusterCat.py --SourceCat %s.app.restored.pybdsm.srl.fits --DoPlot=1 --NGen 100 --NCPU 40 --FluxMin 0.001 --NCluster 6 --CentralRadius 0.7"%BaseImageName
+        ss="ClusterCat.py --SourceCat %s.app.restored.pybdsm.srl.fits --DoPlot=1 --NGen 100 --NCPU 40 --FluxMin 0.001 --NCluster 12"%BaseImageName
         os_exec(ss)
 
     # ################################
@@ -173,10 +176,11 @@ def run(MSName):
 
     CleanFiles(MSName)
 
-def run_all():
-    ll=[l.strip() for l in file("mslist.txt","r").readlines()]
+def run_all(MSList="mslist.txt"):
+    ll=[l.strip() for l in file(MSList,"r").readlines()]
     for MSName in ll:
         run(MSName)
 
 if __name__=="__main__":
-    run_all()
+    
+    run_all(MSList=sys.argv[1])
