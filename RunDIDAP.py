@@ -132,8 +132,8 @@ def run(MSName):
     if not os.path.isfile(NodesFile):
         ss="MakeCatalog.py --RestoredIm %s.app.restored.fits"%BaseImageName
         os_exec(ss)
-        #ss="ClusterCat.py --SourceCat %s.app.restored.pybdsm.srl.fits --DoPlot=1 --NGen 100 --NCPU 40 --FluxMin 0.001 --NCluster 6 --CentralRadius 0.7"%BaseImageName
-        ss="ClusterCat.py --SourceCat %s.app.restored.pybdsm.srl.fits --DoPlot=1 --NGen 100 --NCPU 40 --FluxMin 0.001 --NCluster 12"%BaseImageName
+        #ss="ClusterCat.py --SourceCat %s.app.restored.pybdsm.srl.fits --DoPlot=0 --NGen 100 --NCPU 40 --FluxMin 0.001 --NCluster 6 --CentralRadius 0.7"%BaseImageName
+        ss="ClusterCat.py --SourceCat %s.app.restored.pybdsm.srl.fits --DoPlot=0 --NGen 100 --NCPU 40 --FluxMin 0.001 --NCluster 12"%BaseImageName
         os_exec(ss)
 
     # ################################
