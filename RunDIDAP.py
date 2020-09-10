@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import os
 from DDFacet.Other import logger
 log=logger.getLogger("DDPipeASKAP")
@@ -10,15 +15,15 @@ MinFacetSize=MaxFacetSize/10.
 PDir="PRODUCTS"
 
 def os_exec(ss,CheckFile=None):
-    print
-    print>>log,ModColor.Str("====================================================================================================================",col="blue")
+    print()
+    log.print(ModColor.Str("====================================================================================================================",col="blue"))
 
     if CheckFile is not None:
         if os.path.isfile(CheckFile):
-            print>>log,ModColor.Str("%s exists..."%CheckFile,col="green")
-            print>>log,ModColor.Str(" skipping step: ",col="green")+"    %s"%ss
+            log.print(ModColor.Str("%s exists..."%CheckFile,col="green"))
+            log.print(ModColor.Str(" skipping step: ",col="green")+"    %s"%ss)
             return
-    print>>log,ModColor.Str("Executing %s"%ss)
+    log.print(ModColor.Str("Executing %s"%ss))
     os.system(ss)
 
 def RunDDF(MSName,
@@ -91,11 +96,11 @@ def CleanFiles(MSName):
           "%s_m.AP.app.restored.fits.mask.fits"%BaseImageName,
           "%s_m.app.restored.pybdsm.srl.fits.ClusterCat.npy"%BaseImageName,
           "SOLS_%s"%MSName]
-    print>>log,ModColor.Str("Moving %s to %s"%(str(KEEP),PDir))
+    log.print(ModColor.Str("Moving %s to %s"%(str(KEEP),PDir)))
     for File in KEEP:
         EX("mv %s %s"%(File,PDir))
         
-    print>>log,ModColor.Str("Delete the rest...")
+    log.print(ModColor.Str("Delete the rest..."))
     EX("rm -rf %s*"%BaseImageName)
     EX("rm -rf %s*.ddfcache"%MSName)
         
@@ -177,7 +182,7 @@ def run(MSName):
     CleanFiles(MSName)
 
 def run_all(MSList="mslist.txt"):
-    ll=[l.strip() for l in file(MSList,"r").readlines()]
+    ll=[l.strip() for l in open(MSList,"r").readlines()]
     for MSName in ll:
         run(MSName)
 
