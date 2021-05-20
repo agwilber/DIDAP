@@ -1,0 +1,21 @@
+phaseshift.py requires askap_packages (https://bitbucket.csiro.au/projects/CASSSOFT/repos/askap-packages/browse)
+--> corrects beam pointing offsets
+
+RunDIDAP.py requires mslist.txt (user creates)
+--> carries out DD cal and imaging
+
+mosaic.sh requires template image (download ASKAPsoft mosaic: )
+--> applies primary beams and ties images together with following scripts:
+
+	askapbeam.py requires astrobits (pip install git+https://github.com/agwilber/astrobits.git)
+	--> creates beam | based on header from DDF where freq is CRVAL4
+
+	applybeam.py 
+	--> applies beam and fix to stoke's I definition 
+
+	regrid.py requires miriad installation (https://www.atnf.csiro.au/computing/software/miriad/INSTALL.html) and path to $MIRBIN set (https://www.atnf.csiro.au/computing/software/miriad/INSTALL.html#post-install)
+	--> regrids all images to same grid
+
+	myadd.py
+	--> creates mosaic
+
