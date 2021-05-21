@@ -14,7 +14,7 @@ Use askapbeam.py on beam_m.AP_m.app.restored.fits to create a beam model which a
 
 askapbeam.py requires astrobits (pip install git+https://github.com/agwilber/astrobits.git)
 
-Use applybeam.py on beam_m.AP_m.app.restored.fits to apply beam model and fix for stoke's I definition
+Use applybeam.py on beam_m.AP_m.app.restored.fits to apply beam model 
 
 Alternatively, use mosaic.sh to build a mosaic of all 36 beams
 
