@@ -10,7 +10,7 @@ Use RunDIDAP.py to carry out DD cal and imaging on mslist.txt
 	
 RunDIDAP.py requires kMS (https://github.com/cyriltasse/killMS) and DDF (https://github.com/cyriltasse/DDFacet)
 
-Use askapbeam.py on beam_m.AP_m.app.restored.fits to create a beam model
+Use askapbeam.py on beam_m.AP_m.app.restored.fits to create a beam model which additonally corrects for Stoke's I defintion
 
 askapbeam.py requires astrobits (pip install git+https://github.com/agwilber/astrobits.git)
 
