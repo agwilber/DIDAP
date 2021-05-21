@@ -57,10 +57,10 @@ for image in ${images[@]}; do
   beamnames+=( $prefix )
 done
 
-parallel -j 37 -v -- ./askapbeam.py --template {1} --output {2} ::: ${images[@]} :::+ ${beamnames[@]}
+parallel -j 1 -v -- ./askapbeam.py --template {1} --output {2} ::: ${images[@]} :::+ ${beamnames[@]}
 
 # Create pb-corrected images
-parallel -j 37 -v -- ./applybeam.py --image {1} --beam {2} ::: ${images[@]} :::+ ${beamnames[@]}
+parallel -j 1 -v -- ./applybeam.py --image {1} --beam {2} ::: ${images[@]} :::+ ${beamnames[@]}
 
 imagepbs=()
 for image in ${images[@]}; do
@@ -69,8 +69,8 @@ for image in ${images[@]}; do
 done
 
 # Regrid both pb-corrected image and beam-power maps
-parallel -j 37 -v -- ./regrid.sh {1} $template ::: ${imagepbs[@]}
-parallel -j 37 -v -- ./regrid.sh {1} $template ::: ${beamnames[@]}
+parallel -j 1 -v -- ./regrid.sh {1} $template ::: ${imagepbs[@]}
+parallel -j 1 -v -- ./regrid.sh {1} $template ::: ${beamnames[@]}
 
 # Rename regridded beams to format expected by myadd
 for beamname in ${beamnames[@]}; do
