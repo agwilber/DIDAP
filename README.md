@@ -16,7 +16,7 @@ askapbeam.py requires astrobits (pip install git+https://github.com/agwilber/ast
 
 Use applybeam.py on beam_m.AP_m.app.restored.fits to apply beam model 
 
-Alternatively, use mosaic.sh to build a mosaic of all 36 beams
+Alternatively, use mosaic.sh to build a mosaic of all 36 DD beam images
 
 mosaic.sh requires ASKAPsoft mosaic as template and requires miriad installation (https://www.atnf.csiro.au/computing/software/miriad/INSTALL.html) and path to $MIRBIN set (https://www.atnf.csiro.au/computing/software/miriad/INSTALL.html#post-install)
   
