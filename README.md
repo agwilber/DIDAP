@@ -1,4 +1,4 @@
-# DIrection Dependent Askap Pipeline
+# DIrection Dependent Askap Pipeline (DIDAP)
 
 Use phaseshift.py to calculate and apply beam offsets to each beam.ms 
 
